@@ -1,13 +1,13 @@
 # validationApi
-Validation Api for Flutterwave Interview
-Api performs validation for data set and returns the validation result.
+Validation Api for Flutterwave Interview <br>
+Api performs validation for data set and returns the validation result. <br>
 
-Installation Steps
-1)Clone repo
-2)run "npm install"
-3)run "npm run dev" or "npm run start"
+Installation Steps <br>
+1)Clone repo <br>
+2)run "npm install" <br>
+3)run "npm run dev" or "npm run start" <br>
 
-Sample request body 
+Sample request body  <br>
 {
   "rule": {
     "field": "missions.count",
@@ -25,9 +25,9 @@ Sample request body
       "failed": 1
     }
   }
-}
+} <br>
 
-Required Fields: "rule"(including all subfields) and "data".
-Accepted rule conditions: 'gt','gte','contains','eq' and 'neq'.
+Required Fields: "rule"(including all subfields) and "data". <br>
+Accepted rule conditions: 'gt','gte','contains','eq' and 'neq'. <br>
 For more info visit https://flwat.glitch.me/fulltime.html
 
