@@ -24,8 +24,11 @@ const payLoadValidator = () => {
       .exists({ checkNull: true, checkFalsy: true })
       .withMessage("rule.condition is required.")
       .isString()
-      .withMessage("rule.condition should be a string."),
-
+      .withMessage("rule.condition should be a string.")
+      .isIn(["eq", "gt", "gte", "contains", "neq"])
+      .withMessage(
+        "invalid condition type, accepted values are 'gt','gte','contains','eq' and 'neq'."
+      ),
     body("rule.condition_value")
       .exists({ checkNull: true, checkFalsy: true })
       .withMessage("rule.condition_value is required.")
@@ -71,6 +74,7 @@ const dataValidator = (rule, data) => {
       field = data[subFields[0]][subFields[1]];
       break;
   }
+
   switch (rule.condition) {
     case "eq":
       return {
@@ -100,7 +104,10 @@ const dataValidator = (rule, data) => {
       };
 
     default:
-      return "INVALID_CONDITION_TYPE";
+      return {
+        response: "INVALID_CONDITION_TYPE",
+        fieldValue: null,
+      };
   }
 };
 const checkForValidationErrors = (req, res, next) => {
