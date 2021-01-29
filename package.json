@@ -6,7 +6,7 @@
   "scripts": {
     "preinstall": " npm install pm2 -g",
     "test": "jest",
-    "start": "pm2 start index.js",
+    "start": "node index.js",
     "dev": "nodemon index.js"
   },
   "repository": {
