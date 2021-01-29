@@ -1,6 +1,5 @@
 const { body, validationResult } = require("express-validator");
 const payLoadValidator = () => {
-  console.log("payload");
   return [
     body("rule")
       .exists({ checkNull: true, checkFalsy: true })
@@ -18,7 +17,7 @@ const payLoadValidator = () => {
     body("rule.field")
       .exists({ checkNull: true, checkFalsy: true })
       .withMessage("rule.field is required.")
-      .isAlphanumeric()
+      .matches("[0-9a-zA-Z]")
       .withMessage("rule.field should be a string or number."),
 
     body("rule.condition")
@@ -42,24 +41,63 @@ const payLoadValidator = () => {
   ];
 };
 const dataValidator = (rule, data) => {
-  if (data[rule.field] == undefined) {
-    return "MISSING_DATA_FIELD";
+  const subFields = rule.field.split(".");
+
+  if (subFields.length > 2) {
+    return {
+      response: "NESTING_ERROR",
+      fieldValue: null,
+    };
+  }
+
+  let field;
+  switch (subFields.length) {
+    case 1:
+      if (data[subFields[0]] == undefined) {
+        return {
+          response: "MISSING_DATA_FIELD",
+          fieldValue: null,
+        };
+      }
+      field = data[subFields[0]];
+      break;
+    case 2:
+      if (data[subFields[0]][subFields[1]] == undefined) {
+        return {
+          response: "MISSING_DATA_FIELD",
+          fieldValue: null,
+        };
+      }
+      field = data[subFields[0]][subFields[1]];
+      break;
   }
   switch (rule.condition) {
     case "eq":
-      return data[rule.field] === rule.condition_value;
+      return {
+        response: field === rule.condition_value,
+        fieldValue: field,
+      };
 
     case "neq":
-      return data[rule.field] !== rule.condition_value;
+      return {
+        response: field !== rule.condition_value,
+        fieldValue: field,
+      };
 
     case "gt":
-      return data[rule.field] > rule.condition_value;
+      return {
+        response: field > rule.condition_value,
+        fieldValue: field,
+      };
 
     case "gte":
-      return data[rule.field] >= rule.condition_value;
+      return { response: field >= rule.condition_value, fieldValue: field };
 
     case "contains":
-      return data[rule.field].includes(rule.condition_value);
+      return {
+        response: field.includes(rule.condition_value),
+        fieldValue: field,
+      };
 
     default:
       return "INVALID_CONDITION_TYPE";
@@ -76,7 +114,7 @@ const checkForValidationErrors = (req, res, next) => {
     .json({ message: errors.errors[0].msg, status: "error", data: null });
 };
 const sendValidationResponse = (res, rule, data, validationResult) => {
-  switch (validationResult) {
+  switch (validationResult.response) {
     case true:
       return res.status(200).json({
         message: `field ${rule.field} successfully validated.`,
@@ -85,7 +123,7 @@ const sendValidationResponse = (res, rule, data, validationResult) => {
           validation: {
             error: false,
             field: rule.field,
-            field_value: data[rule.field],
+            field_value: validationResult.fieldValue,
             condition: rule.condition,
             condition_value: rule.condition_value,
           },
@@ -100,7 +138,7 @@ const sendValidationResponse = (res, rule, data, validationResult) => {
           validation: {
             error: true,
             field: rule.field,
-            field_value: data[rule.field],
+            field_value: validationResult.fieldValue,
             condition: rule.condition,
             condition_value: rule.condition_value,
           },
@@ -115,6 +153,12 @@ const sendValidationResponse = (res, rule, data, validationResult) => {
     case "INVALID_CONDITION_TYPE":
       return res.status(400).json({
         message: `invalid condition type, accepted values are 'gt','gte','contains','eq' and 'neq'`,
+        status: "error",
+        data: null,
+      });
+    case "NESTING_ERROR":
+      return res.status(400).json({
+        message: `rule field is more than 2 nested levels.`,
         status: "error",
         data: null,
       });
